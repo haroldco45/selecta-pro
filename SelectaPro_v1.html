@@ -1,0 +1,941 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SelectaPro — Sistema de Selección de Personal</title>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=DM+Sans:wght@400;500&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --pri:#1e3a5f;--pri2:#2d5282;--pri3:#4a7fb5;
+  --acc:#e8a020;--acc2:#f5b942;
+  --verde:#15803d;--rojo:#b91c1c;--naranja:#c2410c;
+  --fondo:#f0f4f9;--card:#ffffff;--borde:#d1dce8;
+  --txt:#1a2740;--sec:#526070;--ter:#8fa0b0;
+  --r:10px;--rlg:16px;
+}
+body{font-family:'DM Sans',sans-serif;background:var(--fondo);color:var(--txt);min-height:100vh}
+
+/* ── ADMIN OVERLAY ───────────────────────────────── */
+.admin-overlay{position:fixed;inset:0;background:rgba(10,20,40,0.82);z-index:9999;display:flex;align-items:center;justify-content:center;backdrop-filter:blur(4px)}
+.admin-overlay.hidden{display:none}
+.admin-box{background:#fff;border-radius:var(--rlg);padding:36px 40px;width:100%;max-width:480px;box-shadow:0 24px 64px rgba(10,20,40,0.3)}
+.admin-box h2{font-family:'Plus Jakarta Sans',sans-serif;font-size:22px;font-weight:800;color:var(--pri);margin-bottom:4px}
+.admin-box p{font-size:13px;color:var(--sec);margin-bottom:24px}
+.admin-field{margin-bottom:18px}
+.admin-field label{font-size:12px;font-weight:600;color:var(--sec);display:block;margin-bottom:5px;letter-spacing:0.3px}
+.admin-field input[type=text]{width:100%;padding:10px 14px;border:1.5px solid var(--borde);border-radius:var(--r);font-size:14px;font-family:'DM Sans',sans-serif;color:var(--txt)}
+.admin-field input:focus{outline:none;border-color:var(--pri3);box-shadow:0 0 0 3px rgba(74,127,181,0.15)}
+.upload-area{border:2px dashed var(--borde);border-radius:var(--r);padding:20px;text-align:center;cursor:pointer;transition:all 0.2s;position:relative}
+.upload-area:hover{border-color:var(--pri3);background:#f0f6ff}
+.upload-area input{position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%}
+.upload-area p{font-size:13px;color:var(--sec);pointer-events:none}
+.upload-area .upload-preview{width:72px;height:72px;border-radius:50%;object-fit:cover;margin:0 auto 8px;display:block}
+.upload-hint{font-size:11px;color:var(--ter);margin-top:4px}
+.admin-pwd{display:flex;flex-direction:column;gap:5px}
+.admin-pwd input{padding:10px 14px;border:1.5px solid var(--borde);border-radius:var(--r);font-size:14px;font-family:'DM Sans',sans-serif;color:var(--txt)}
+.admin-pwd input:focus{outline:none;border-color:var(--pri3);box-shadow:0 0 0 3px rgba(74,127,181,0.15)}
+.btn-admin{width:100%;padding:13px;background:linear-gradient(135deg,var(--pri),var(--pri2));color:#fff;border:none;border-radius:var(--r);font-family:'Plus Jakarta Sans',sans-serif;font-size:14px;font-weight:700;cursor:pointer;margin-top:8px;transition:opacity 0.15s}
+.btn-admin:hover{opacity:0.9}
+.admin-err{font-size:12px;color:var(--rojo);margin-top:6px;display:none}
+.admin-lock{text-align:center;padding:8px 0 16px}
+.admin-lock svg{width:40px;height:40px;color:var(--pri);margin-bottom:8px}
+.sp-badge{display:inline-block;background:linear-gradient(135deg,var(--pri),var(--acc));color:#fff;font-size:11px;font-weight:700;padding:3px 10px;border-radius:20px;letter-spacing:0.5px;margin-bottom:12px}
+
+/* ── HEADER ──────────────────────────────────────── */
+.header{background:linear-gradient(135deg,var(--pri) 0%,var(--pri2) 100%);box-shadow:0 2px 20px rgba(10,20,40,0.2)}
+.header-inner{max-width:980px;margin:0 auto;padding:14px 24px;display:flex;align-items:center;gap:16px}
+.header-logo-wrap{width:60px;height:60px;border-radius:50%;background:#fff;overflow:hidden;flex-shrink:0;box-shadow:0 2px 12px rgba(0,0,0,0.2);display:flex;align-items:center;justify-content:center}
+.header-logo-wrap img{width:100%;height:100%;object-fit:cover}
+.header-logo-placeholder{width:100%;height:100%;display:flex;align-items:center;justify-content:center;background:linear-gradient(135deg,#e0eaff,#c7d8f5);font-family:'Plus Jakarta Sans',sans-serif;font-size:18px;font-weight:800;color:var(--pri)}
+.header-text h1{font-family:'Plus Jakarta Sans',sans-serif;font-size:18px;font-weight:800;color:#fff;line-height:1.2}
+.header-text p{font-size:12px;color:rgba(255,255,255,0.65);margin-top:2px}
+.header-right{margin-left:auto;display:flex;flex-direction:column;align-items:flex-end;gap:5px}
+.hbadge{background:rgba(255,255,255,0.13);border:1px solid rgba(255,255,255,0.22);border-radius:20px;padding:4px 12px;font-size:11px;color:#fff;white-space:nowrap}
+.btn-config{background:rgba(255,255,255,0.15);border:1px solid rgba(255,255,255,0.3);border-radius:20px;padding:4px 12px;font-size:11px;color:#fff;cursor:pointer;font-family:'DM Sans',sans-serif;transition:all 0.15s}
+.btn-config:hover{background:rgba(255,255,255,0.25)}
+
+/* ── MAIN ────────────────────────────────────────── */
+.main{max-width:980px;margin:0 auto;padding:22px 16px 60px}
+
+/* ── TABS ────────────────────────────────────────── */
+.tabs{display:flex;gap:10px;margin-bottom:18px}
+.tab{flex:1;padding:11px 14px;border:1.5px solid var(--borde);border-radius:var(--r);background:var(--card);font-family:'Plus Jakarta Sans',sans-serif;font-size:13px;font-weight:700;cursor:pointer;color:var(--sec);transition:all 0.18s;text-align:center}
+.tab:hover{border-color:var(--pri3);color:var(--pri)}
+.tab.active{background:var(--pri);color:#fff;border-color:var(--pri);box-shadow:0 2px 12px rgba(30,58,95,0.25)}
+
+/* ── PHASE BAR ───────────────────────────────────── */
+.phase-bar{display:flex;margin-bottom:20px;border-radius:var(--rlg);overflow:hidden;border:1px solid var(--borde)}
+.phase{flex:1;padding:10px 12px;font-size:12px;font-weight:600;font-family:'Plus Jakarta Sans',sans-serif;text-align:center;background:var(--card);color:var(--ter);border-right:1px solid var(--borde);transition:all 0.2s}
+.phase:last-child{border-right:none}
+.phase.done{background:#e8f0ff;color:var(--pri)}
+.phase.active{background:var(--pri);color:#fff}
+.phase-num{display:inline-flex;align-items:center;justify-content:center;width:18px;height:18px;border-radius:50%;font-size:10px;font-weight:700;margin-right:5px;background:rgba(255,255,255,0.22)}
+.phase:not(.active):not(.done) .phase-num{background:var(--borde);color:var(--ter)}
+.phase.done .phase-num{background:var(--pri3);color:#fff}
+
+/* ── PROGRESS ────────────────────────────────────── */
+.progress-wrap{margin-bottom:18px}
+.progress-meta{display:flex;justify-content:space-between;font-size:11px;color:var(--ter);margin-bottom:5px}
+.progress-bar{height:5px;background:var(--borde);border-radius:3px;overflow:hidden}
+.progress-fill{height:100%;background:linear-gradient(90deg,var(--pri),var(--pri3));border-radius:3px;transition:width 0.4s}
+
+/* ── CARD ────────────────────────────────────────── */
+.card{background:var(--card);border:1px solid var(--borde);border-radius:var(--rlg);padding:22px 24px;margin-bottom:14px;box-shadow:0 1px 6px rgba(30,58,95,0.06)}
+.card-title{font-family:'Plus Jakarta Sans',sans-serif;font-size:14px;font-weight:800;color:var(--pri);margin-bottom:16px;padding-bottom:10px;border-bottom:1px solid var(--borde);display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.badge{font-size:11px;padding:3px 10px;border-radius:20px;font-weight:700}
+.b-emp{background:#dbeafe;color:#1e3a5f}
+.b-sena{background:#dcfce7;color:#15803d}
+.b-gray{background:var(--fondo);color:var(--sec);border:1px solid var(--borde)}
+.b-warn{background:#fff7ed;color:#c2410c}
+
+/* ── FORM ────────────────────────────────────────── */
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px}
+.grid3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px;margin-bottom:14px}
+.field{display:flex;flex-direction:column;gap:5px}
+label{font-size:12px;font-weight:600;color:var(--sec);letter-spacing:0.3px}
+input[type=text],input[type=date],input[type=email],select,textarea{
+  padding:9px 12px;border:1.5px solid var(--borde);border-radius:var(--r);
+  font-size:13px;font-family:'DM Sans',sans-serif;color:var(--txt);background:#fff;
+  transition:border 0.15s;width:100%
+}
+input:focus,select:focus,textarea:focus{outline:none;border-color:var(--pri3);box-shadow:0 0 0 3px rgba(74,127,181,0.12)}
+textarea{resize:vertical;min-height:64px;line-height:1.5}
+.req{color:var(--rojo);font-size:10px;background:#fff0f2;padding:1px 6px;border-radius:10px;margin-left:4px}
+
+/* ── INTERVIEW Q ─────────────────────────────────── */
+.q-block{margin-bottom:12px;padding:14px 16px;border:1px solid var(--borde);border-radius:var(--r);background:#f8fafd;transition:border 0.15s}
+.q-block:hover{border-color:#a8c0d8}
+.q-num{display:inline-flex;align-items:center;justify-content:center;width:22px;height:22px;border-radius:50%;background:var(--pri);color:#fff;font-size:11px;font-weight:700;flex-shrink:0;margin-right:8px}
+.q-text{font-size:13px;color:var(--txt);line-height:1.55;display:flex;align-items:flex-start}
+.stars{display:flex;gap:6px;margin-top:10px}
+.star{width:34px;height:34px;border-radius:8px;border:1.5px solid var(--borde);background:#fff;cursor:pointer;font-size:14px;font-weight:700;display:flex;align-items:center;justify-content:center;color:var(--ter);transition:all 0.12s;user-select:none}
+.star:hover{border-color:var(--pri3);background:#dbeafe;color:var(--pri)}
+.star.on{background:var(--pri);border-color:var(--pri);color:#fff}
+.q-meta{display:flex;justify-content:space-between;align-items:center;margin-top:5px}
+.q-hint{font-size:11px;color:var(--ter)}
+.q-score{font-size:12px;font-weight:700;color:var(--pri)}
+.obs-input{width:100%;margin-top:8px;padding:7px 10px;border:1px solid var(--borde);border-radius:8px;font-size:12px;font-family:'DM Sans',sans-serif;color:var(--txt);background:#fff;resize:none}
+.obs-input:focus{outline:none;border-color:var(--pri3)}
+
+/* ── PSYCHOTEST ──────────────────────────────────── */
+.pt-q{margin-bottom:12px;padding:13px 15px;border:1px solid var(--borde);border-radius:var(--r);background:#f8fafd}
+.pt-q:hover{border-color:#a8c0d8}
+.pt-q-text{font-size:13px;color:var(--txt);line-height:1.55;margin-bottom:10px}
+.pt-q-num{display:inline-flex;align-items:center;justify-content:center;width:20px;height:20px;border-radius:50%;background:var(--pri3);color:#fff;font-size:10px;font-weight:700;flex-shrink:0;margin-right:7px}
+.pt-options{display:flex;flex-direction:column;gap:6px}
+.pt-opt{display:flex;align-items:center;gap:10px;padding:8px 12px;border:1.5px solid var(--borde);border-radius:8px;cursor:pointer;font-size:13px;color:var(--txt);background:#fff;transition:all 0.13s;user-select:none}
+.pt-opt:hover{border-color:var(--pri3);background:#f0f6ff}
+.pt-opt.selected{border-color:var(--pri);background:#dbeafe;color:var(--pri);font-weight:600}
+.pt-opt-letter{width:24px;height:24px;border-radius:50%;background:var(--fondo);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;flex-shrink:0;color:var(--sec)}
+.pt-opt.selected .pt-opt-letter{background:var(--pri);color:#fff}
+.likert-row{display:flex;gap:6px;flex-wrap:wrap;margin-top:6px}
+.lk-opt{padding:7px 14px;border:1.5px solid var(--borde);border-radius:20px;cursor:pointer;font-size:12px;font-weight:600;color:var(--sec);background:#fff;transition:all 0.12s;user-select:none}
+.lk-opt:hover{border-color:var(--pri3);color:var(--pri)}
+.lk-opt.selected{background:var(--pri);border-color:var(--pri);color:#fff}
+
+/* ── LEGAL ───────────────────────────────────────── */
+.legal-note{font-size:12px;color:var(--sec);padding:10px 14px;background:#eef4ff;border-left:3px solid var(--pri3);border-radius:0 8px 8px 0;margin-top:10px;line-height:1.6}
+
+/* ── INTRO PRUEBA ────────────────────────────────── */
+.intro-box{background:linear-gradient(135deg,#eef4ff,#dbeafe);border:1px solid #bfdbfe;border-radius:var(--rlg);padding:20px 24px;margin-bottom:14px}
+.intro-box h3{font-family:'Plus Jakarta Sans',sans-serif;font-size:16px;font-weight:800;color:var(--pri);margin-bottom:8px}
+.intro-box p{font-size:13px;color:var(--sec);line-height:1.6;margin-bottom:6px}
+.intro-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:12px}
+.intro-stat{background:#fff;border:1px solid #bfdbfe;border-radius:var(--r);padding:12px;text-align:center}
+.intro-stat-num{font-family:'Plus Jakarta Sans',sans-serif;font-size:22px;font-weight:800;color:var(--pri)}
+.intro-stat-label{font-size:11px;color:var(--sec);margin-top:2px}
+
+/* ── BUTTONS ─────────────────────────────────────── */
+.btn-primary{padding:12px 24px;background:linear-gradient(135deg,var(--pri),var(--pri2));color:#fff;border:none;border-radius:var(--r);font-family:'Plus Jakarta Sans',sans-serif;font-size:14px;font-weight:700;cursor:pointer;width:100%;transition:opacity 0.15s;box-shadow:0 2px 10px rgba(30,58,95,0.22)}
+.btn-primary:hover{opacity:0.9}
+.btn-secondary{padding:12px 24px;background:transparent;color:var(--sec);border:1.5px solid var(--borde);border-radius:var(--r);font-family:'Plus Jakarta Sans',sans-serif;font-size:14px;font-weight:600;cursor:pointer;width:100%;transition:all 0.15s}
+.btn-secondary:hover{border-color:var(--pri3);color:var(--pri);background:#f0f6ff}
+.btn-success{padding:12px 24px;background:linear-gradient(135deg,#15803d,#16a34a);color:#fff;border:none;border-radius:var(--r);font-family:'Plus Jakarta Sans',sans-serif;font-size:14px;font-weight:700;cursor:pointer;width:100%;box-shadow:0 2px 10px rgba(21,128,61,0.22)}
+.btn-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:4px}
+
+/* ── RESULT ──────────────────────────────────────── */
+.result-summary{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:16px}
+.res-card{border-radius:var(--rlg);padding:18px;text-align:center}
+.res-card.entrevista{background:#eff6ff;border:1px solid #bfdbfe}
+.res-card.prueba{background:#f0fdf4;border:1px solid #bbf7d0}
+.res-card.total{background:linear-gradient(135deg,var(--pri),var(--pri2));color:#fff;grid-column:1/-1;border:none}
+.res-pct{font-family:'Plus Jakarta Sans',sans-serif;font-size:44px;font-weight:800}
+.res-label{font-size:13px;font-weight:600;margin-top:4px}
+.res-sub{font-size:11px;opacity:0.7;margin-top:2px}
+.apt-banner{border-radius:var(--rlg);padding:14px 20px;text-align:center;font-family:'Plus Jakarta Sans',sans-serif;font-size:15px;font-weight:700;margin-bottom:14px}
+.result-bars{display:grid;gap:9px}
+.bar-row{display:flex;align-items:center;gap:10px;font-size:12px}
+.bar-name{width:200px;color:var(--sec)}
+.bar-track{flex:1;height:7px;background:var(--fondo);border-radius:4px;overflow:hidden;border:1px solid var(--borde)}
+.bar-fill{height:100%;border-radius:4px;transition:width 0.7s ease}
+.bar-pct{width:36px;font-weight:700;font-size:12px;text-align:right}
+
+/* ── CHECKLIST ───────────────────────────────────── */
+.check-row{display:flex;gap:12px;align-items:flex-start;padding:9px 0;border-bottom:1px solid var(--borde)}
+.check-row:last-child{border-bottom:none}
+.check-row input[type=checkbox]{width:17px;height:17px;flex-shrink:0;margin-top:1px;cursor:pointer;accent-color:var(--pri)}
+.check-text{font-size:13px;color:var(--txt);line-height:1.5}
+
+.disclaimer{font-size:11px;color:var(--ter);text-align:center;margin-top:10px;line-height:1.7;padding:0 8px}
+
+/* ── FOOTER ──────────────────────────────────────── */
+.footer{text-align:center;padding:16px;font-size:11px;color:var(--ter);border-top:1px solid var(--borde);margin-top:8px}
+
+/* ── RESPONSIVE ──────────────────────────────────── */
+@media(max-width:620px){
+  .grid2,.grid3,.result-summary,.intro-grid{grid-template-columns:1fr}
+  .res-card.total{grid-column:1}
+  .phase-bar{display:none}
+  .bar-name{width:120px}
+  .admin-box{padding:24px 20px;margin:16px}
+}
+</style>
+</head>
+<body>
+
+<!-- ══ ADMIN OVERLAY ══════════════════════════════════════════════ -->
+<div class="admin-overlay" id="adminOverlay">
+  <div class="admin-box" id="adminBox">
+
+    <!-- LOCK SCREEN -->
+    <div id="adminLock">
+      <div class="admin-lock">
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/></svg>
+      </div>
+      <div class="sp-badge">SelectaPro</div>
+      <h2>Panel de configuración</h2>
+      <p>Ingresa la contraseña de administrador para personalizar esta app.</p>
+      <div class="admin-field">
+        <div class="admin-pwd">
+          <label>Contraseña</label>
+          <input type="password" id="pwdInput" placeholder="••••••••" onkeydown="if(event.key==='Enter')checkPwd()">
+          <div class="admin-err" id="pwdErr">Contraseña incorrecta. Intenta de nuevo.</div>
+        </div>
+      </div>
+      <button class="btn-admin" onclick="checkPwd()">Ingresar al panel</button>
+      <p style="font-size:11px;color:var(--ter);text-align:center;margin-top:12px">Contraseña por defecto: <strong>selectapro2024</strong></p>
+    </div>
+
+    <!-- CONFIG PANEL -->
+    <div id="adminConfig" style="display:none">
+      <div class="sp-badge">SelectaPro</div>
+      <h2>Configuración de empresa</h2>
+      <p>Personaliza la app con los datos de tu empresa. Los cambios se guardan automáticamente.</p>
+
+      <div class="admin-field">
+        <label>Nombre de la empresa</label>
+        <input type="text" id="cfgNombre" placeholder="Ej: Empresa XYZ S.A.S." maxlength="60">
+      </div>
+
+      <div class="admin-field">
+        <label>Slogan / Descripción corta (opcional)</label>
+        <input type="text" id="cfgSlogan" placeholder="Ej: Gestión de Talento Humano" maxlength="60">
+      </div>
+
+      <div class="admin-field">
+        <label>Logo de la empresa</label>
+        <div class="upload-area" id="uploadArea">
+          <input type="file" id="logoInput" accept="image/*" onchange="handleLogoUpload(this)">
+          <img id="logoPreview" class="upload-preview" src="" alt="" style="display:none">
+          <p id="uploadText">📁 Haz clic para subir el logo<br><span class="upload-hint">PNG, JPG o SVG — máx 2MB</span></p>
+        </div>
+      </div>
+
+      <div class="admin-field">
+        <label>Nueva contraseña de administrador (opcional)</label>
+        <input type="password" id="cfgPwd" placeholder="Dejar vacío para mantener la actual">
+      </div>
+
+      <button class="btn-admin" onclick="saveConfig()">Guardar y entrar a la app</button>
+    </div>
+
+  </div>
+</div>
+
+<!-- ══ HEADER ════════════════════════════════════════════════════ -->
+<div class="header">
+  <div class="header-inner">
+    <div class="header-logo-wrap">
+      <img id="headerLogo" src="" alt="" style="display:none">
+      <div class="header-logo-placeholder" id="headerPlaceholder">SP</div>
+    </div>
+    <div class="header-text">
+      <h1 id="headerNombre">SelectaPro</h1>
+      <p id="headerSlogan">Sistema de Selección de Personal</p>
+    </div>
+    <div class="header-right">
+      <div class="hbadge">Normativa Colombiana</div>
+      <div class="hbadge" id="modeBadge">Candidato a Empleo</div>
+      <button class="btn-config" onclick="openAdmin()">⚙ Configurar</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══ MAIN ═══════════════════════════════════════════════════════ -->
+<div class="main">
+  <div class="tabs">
+    <button class="tab active" onclick="setMode('empleo')">👤 Candidato a Empleo</button>
+    <button class="tab" onclick="setMode('sena')">🎓 Practicante SENA</button>
+  </div>
+
+  <div class="phase-bar">
+    <div class="phase active" id="ph1"><span class="phase-num">1</span>Datos</div>
+    <div class="phase" id="ph2"><span class="phase-num">2</span>Entrevista</div>
+    <div class="phase" id="ph3"><span class="phase-num">3</span>Prueba psicotécnica</div>
+    <div class="phase" id="ph4"><span class="phase-num">4</span>Resultado</div>
+  </div>
+
+  <div class="progress-wrap">
+    <div class="progress-meta">
+      <span id="stepLabel">Paso 1 — Datos del candidato</span>
+      <span id="stepPct">11%</span>
+    </div>
+    <div class="progress-bar"><div class="progress-fill" id="progFill" style="width:11%"></div></div>
+  </div>
+
+  <div id="stepPanels"></div>
+
+  <div class="footer">Desarrollada por Vibras Positivas HM — Derechos de Autor Reservados.</div>
+</div>
+
+<script>
+// ══ CONFIG STATE ══════════════════════════════════════════════════
+let cfg = {
+  nombre: 'SelectaPro',
+  slogan: 'Sistema de Selección de Personal',
+  logoSrc: '',
+  pwd: 'selectapro2024'
+};
+
+// Load from localStorage if exists
+try {
+  const saved = localStorage.getItem('selectapro_cfg');
+  if(saved) cfg = {...cfg, ...JSON.parse(saved)};
+} catch(e){}
+
+// ══ ADMIN ════════════════════════════════════════════════════════
+function checkPwd() {
+  const val = document.getElementById('pwdInput').value;
+  if(val === cfg.pwd) {
+    document.getElementById('adminLock').style.display = 'none';
+    document.getElementById('adminConfig').style.display = 'block';
+    document.getElementById('cfgNombre').value = cfg.nombre !== 'SelectaPro' ? cfg.nombre : '';
+    document.getElementById('cfgSlogan').value = cfg.slogan !== 'Sistema de Selección de Personal' ? cfg.slogan : '';
+    if(cfg.logoSrc) {
+      document.getElementById('logoPreview').src = cfg.logoSrc;
+      document.getElementById('logoPreview').style.display = 'block';
+      document.getElementById('uploadText').style.display = 'none';
+    }
+  } else {
+    document.getElementById('pwdErr').style.display = 'block';
+    document.getElementById('pwdInput').value = '';
+  }
+}
+
+function handleLogoUpload(input) {
+  const file = input.files[0];
+  if(!file) return;
+  if(file.size > 2*1024*1024){ alert('El archivo es muy grande. Máximo 2MB.'); return; }
+  const reader = new FileReader();
+  reader.onload = e => {
+    document.getElementById('logoPreview').src = e.target.result;
+    document.getElementById('logoPreview').style.display = 'block';
+    document.getElementById('uploadText').style.display = 'none';
+    cfg.logoSrc = e.target.result;
+  };
+  reader.readAsDataURL(file);
+}
+
+function saveConfig() {
+  const nombre = document.getElementById('cfgNombre').value.trim();
+  const slogan = document.getElementById('cfgSlogan').value.trim();
+  const newPwd = document.getElementById('cfgPwd').value.trim();
+  if(nombre) cfg.nombre = nombre;
+  if(slogan) cfg.slogan = slogan;
+  if(newPwd) cfg.pwd = newPwd;
+  try { localStorage.setItem('selectapro_cfg', JSON.stringify(cfg)); } catch(e){}
+  applyConfig();
+  document.getElementById('adminOverlay').classList.add('hidden');
+}
+
+function applyConfig() {
+  document.getElementById('headerNombre').textContent = cfg.nombre;
+  document.getElementById('headerSlogan').textContent = cfg.slogan;
+  document.title = cfg.nombre + ' — Selección de Personal';
+  if(cfg.logoSrc) {
+    document.getElementById('headerLogo').src = cfg.logoSrc;
+    document.getElementById('headerLogo').style.display = 'block';
+    document.getElementById('headerPlaceholder').style.display = 'none';
+  } else {
+    document.getElementById('headerLogo').style.display = 'none';
+    document.getElementById('headerPlaceholder').style.display = 'flex';
+    const initials = cfg.nombre.split(' ').slice(0,2).map(w=>w[0]).join('').toUpperCase();
+    document.getElementById('headerPlaceholder').textContent = initials || 'SP';
+  }
+}
+
+function openAdmin() {
+  document.getElementById('adminLock').style.display = 'block';
+  document.getElementById('adminConfig').style.display = 'none';
+  document.getElementById('pwdInput').value = '';
+  document.getElementById('pwdErr').style.display = 'none';
+  document.getElementById('adminOverlay').classList.remove('hidden');
+}
+
+// ══ APP STATE ═════════════════════════════════════════════════════
+let mode = 'empleo';
+let step = 1;
+let intRatings = {}, intObs = {}, formData = {}, ptAnswers = {};
+const TOTAL_STEPS = 9;
+const stepLabels = {
+  1:'Datos del candidato',
+  2:'Entrevista — Bloque 1 de 3',3:'Entrevista — Bloque 2 de 3',4:'Entrevista — Bloque 3 de 3',
+  5:'Prueba — Introducción',6:'Prueba — Bloque 1 de 3',7:'Prueba — Bloque 2 de 3',8:'Prueba — Bloque 3 de 3',
+  9:'Resultado final'
+};
+
+// ══ INTERVIEW QUESTIONS ═══════════════════════════════════════════
+const interviewSets = {
+  empleo:[
+    {cat:'Competencias Técnicas',qs:[
+      {id:'i1',text:'Describa su experiencia relacionada con el cargo. ¿Qué funciones ha desempeñado en trabajos anteriores?'},
+      {id:'i2',text:'¿Qué conocimientos técnicos lo hacen apto para este puesto?'},
+      {id:'i3',text:'¿Ha manejado herramientas, sistemas o equipos del área? Descríbalos.'}
+    ]},
+    {cat:'Competencias Conductuales',qs:[
+      {id:'i4',text:'Cuéntenos una situación difícil en un trabajo anterior y cómo la resolvió.'},
+      {id:'i5',text:'¿Cómo maneja el trabajo bajo presión o con plazos ajustados? Dé un ejemplo.'},
+      {id:'i6',text:'Describa una experiencia de trabajo en equipo. ¿Cuál fue su rol?'}
+    ]},
+    {cat:'Actitud y Valores',qs:[
+      {id:'i7',text:'¿Por qué le interesa trabajar en esta empresa? ¿Qué conoce de ella?'},
+      {id:'i8',text:'¿Cuáles son sus expectativas salariales y metas de desarrollo profesional?'},
+      {id:'i9',text:'¿Tiene disponibilidad para horarios rotativos o extendidos si el cargo lo requiere?'}
+    ]}
+  ],
+  sena:[
+    {cat:'Perfil Académico',qs:[
+      {id:'i1',text:'¿Qué programa técnico o tecnológico cursa en el SENA? ¿En qué etapa está?'},
+      {id:'i2',text:'¿Cuáles son las principales competencias laborales que ha desarrollado?'},
+      {id:'i3',text:'¿Ha realizado proyectos prácticos en su formación? Descríbalos.'}
+    ]},
+    {cat:'Motivación y Compromiso',qs:[
+      {id:'i4',text:'¿Por qué eligió esta empresa para su práctica? ¿Qué espera aprender?'},
+      {id:'i5',text:'¿Cómo aplicará los conocimientos del SENA en el área de práctica asignada?'},
+      {id:'i6',text:'¿Tiene disponibilidad de tiempo completo durante todo el período de práctica?'}
+    ]},
+    {cat:'Habilidades Personales',qs:[
+      {id:'i7',text:'¿Cómo describe su capacidad para recibir instrucciones y retroalimentación?'},
+      {id:'i8',text:'Describa una situación donde resolvió un problema de forma autónoma.'},
+      {id:'i9',text:'¿Tiene alguna condición de salud que la empresa deba conocer para adaptar su puesto?'}
+    ]}
+  ]
+};
+
+// ══ PSYCHOTECHNICAL TESTS ═════════════════════════════════════════
+const ptTests = {
+  'Comercial / Ventas':[
+    {section:'A. Razonamiento lógico y numérico',qs:[
+      {id:'p1',type:'mc',text:'Si un vendedor logra el 80% de su meta de $5.000.000, ¿cuánto vendió?',opts:['$3.500.000','$4.000.000','$4.500.000','$5.600.000'],ans:1},
+      {id:'p2',type:'mc',text:'Secuencia: 2, 6, 18, 54, ___. ¿Cuál es el siguiente número?',opts:['108','162','216','270'],ans:1},
+      {id:'p3',type:'mc',text:'Se venden 240 unidades en 6 días. ¿Cuántas en 15 días al mismo ritmo?',opts:['480','540','600','720'],ans:2},
+      {id:'p4',type:'mc',text:'Un producto de $80.000 tiene descuento del 15%. ¿Cuál es el precio final?',opts:['$65.000','$67.000','$68.000','$70.000'],ans:2}
+    ]},
+    {section:'B. Conocimientos técnicos — Ventas',qs:[
+      {id:'p5',type:'mc',text:'¿Qué significa "fidelización de clientes" en el contexto comercial?',opts:['Conseguir nuevos clientes a cualquier costo','Estrategias para que clientes existentes sigan comprando','Ofrecer siempre el precio más bajo','Vender en consignación'],ans:1},
+      {id:'p6',type:'mc',text:'¿Cuál es una técnica de cierre de ventas?',opts:['Ignorar las objeciones del cliente','Cierre por alternativa: "¿Lo lleva en efectivo o a crédito?"','Reducir precio sin consultar supervisión','Ofrecer regalos sin autorización'],ans:1},
+      {id:'p7',type:'mc',text:'En Colombia, la factura de venta es obligatoria:',opts:['Solo en ventas superiores a $1.000.000','En toda transacción comercial (Código de Comercio)','Solo en ventas a empresas','Solo cuando el cliente la solicita'],ans:1}
+    ]},
+    {section:'C. Perfil conductual',qs:[
+      {id:'p8',type:'likert',text:'Me siento cómodo/a abordando personas desconocidas para presentar un producto.',opts:['Totalmente en desacuerdo','En desacuerdo','Neutral','De acuerdo','Totalmente de acuerdo']},
+      {id:'p9',type:'likert',text:'Cuando un cliente rechaza mi propuesta, lo intento nuevamente con un enfoque diferente.',opts:['Totalmente en desacuerdo','En desacuerdo','Neutral','De acuerdo','Totalmente de acuerdo']},
+      {id:'p10',type:'likert',text:'Prefiero trabajar con metas claras y medibles antes que con objetivos generales.',opts:['Totalmente en desacuerdo','En desacuerdo','Neutral','De acuerdo','Totalmente de acuerdo']}
+    ]}
+  ],
+  'Bodega y Logística':[
+    {section:'A. Razonamiento espacial y numérico',qs:[
+      {id:'p1',type:'mc',text:'Un camión tiene capacidad de 4.500 kg. Ya lleva 3.200 kg. ¿Cuántos kg más puede cargar?',opts:['1.100 kg','1.200 kg','1.300 kg','1.500 kg'],ans:2},
+      {id:'p2',type:'mc',text:'Se reciben 8 cajas con 24 unidades cada una y se despachan 112. ¿Cuántas quedan?',opts:['68','76','80','84'],ans:1},
+      {id:'p3',type:'mc',text:'¿Cuál metodología organiza inventarios según rotación?',opts:['DOFA','PEPS (Primero en entrar, primero en salir)','BPM','KPI'],ans:1},
+      {id:'p4',type:'mc',text:'Un producto pesa 2,5 kg. 60 unidades por caja. ¿Cuánto pesa la caja llena?',opts:['120 kg','130 kg','150 kg','165 kg'],ans:2}
+    ]},
+    {section:'B. Conocimientos técnicos — Logística',qs:[
+      {id:'p5',type:'mc',text:'¿Qué es "picking" en el proceso logístico?',opts:['El registro de entrada de mercancía','La selección y recolección de productos para un pedido','El conteo físico del inventario','La devolución a proveedores'],ans:1},
+      {id:'p6',type:'mc',text:'¿Función principal de una remisión de mercancía?',opts:['Registrar las ventas del día','Soportar el traslado sin que implique venta','Reemplazar la factura en todos los casos','Registrar pagos de proveedores'],ans:1},
+      {id:'p7',type:'mc',text:'Las BPM en bodega aplican principalmente para:',opts:['Aumentar las ventas','Garantizar higiene, orden y seguridad del producto','Reducir empleados','Calcular costos'],ans:1}
+    ]},
+    {section:'C. Perfil conductual',qs:[
+      {id:'p8',type:'likert',text:'Mantengo mi área de trabajo organizada sin que me lo recuerden.',opts:['Totalmente en desacuerdo','En desacuerdo','Neutral','De acuerdo','Totalmente de acuerdo']},
+      {id:'p9',type:'likert',text:'Si detecto un error en un despacho, lo reporto de inmediato aunque genere inconvenientes.',opts:['Totalmente en desacuerdo','En desacuerdo','Neutral','De acuerdo','Totalmente de acuerdo']},
+      {id:'p10',type:'likert',text:'Me adapto fácilmente a horarios rotativos o tareas físicamente exigentes.',opts:['Totalmente en desacuerdo','En desacuerdo','Neutral','De acuerdo','Totalmente de acuerdo']}
+    ]}
+  ],
+  'Contabilidad y Finanzas':[
+    {section:'A. Razonamiento numérico y analítico',qs:[
+      {id:'p1',type:'mc',text:'Una empresa tiene activos por $120.000.000 y pasivos por $45.000.000. ¿Cuál es su patrimonio?',opts:['$65.000.000','$70.000.000','$75.000.000','$80.000.000'],ans:2},
+      {id:'p2',type:'mc',text:'Una factura de $800.000 tiene IVA del 19%. ¿Cuál es el total a pagar?',opts:['$950.200','$952.000','$960.000','$980.000'],ans:1},
+      {id:'p3',type:'mc',text:'¿Qué refleja el estado de resultados?',opts:['Bienes y deudas en un momento dado','Ingresos, costos y ganancias de un período','El flujo de caja proyectado','Historial de crédito con bancos'],ans:1},
+      {id:'p4',type:'mc',text:'Cuenta por cobrar de $2.400.000 en 90 días dividida en cuotas iguales. ¿Cuánto por mes?',opts:['$600.000','$700.000','$800.000','$900.000'],ans:2}
+    ]},
+    {section:'B. Conocimientos técnicos — Contabilidad',qs:[
+      {id:'p5',type:'mc',text:'¿Cuál es la ecuación contable fundamental?',opts:['Ingresos = Costos + Utilidad','Activo = Pasivo + Patrimonio','Ventas = Compras + Inventario','Caja = Bancos + Cartera'],ans:1},
+      {id:'p6',type:'mc',text:'En Colombia, el RUT es administrado por:',opts:['La Cámara de Comercio','La DIAN','El Ministerio de Hacienda','Superintendencia Financiera'],ans:1},
+      {id:'p7',type:'mc',text:'¿Qué es la retención en la fuente?',opts:['Un impuesto adicional al IVA','Un anticipo del impuesto de renta descontado en el pago','Un descuento por pronto pago','Un arancel de importación'],ans:1}
+    ]},
+    {section:'C. Perfil conductual',qs:[
+      {id:'p8',type:'likert',text:'Verifico dos veces los registros numéricos antes de reportarlos.',opts:['Totalmente en desacuerdo','En desacuerdo','Neutral','De acuerdo','Totalmente de acuerdo']},
+      {id:'p9',type:'likert',text:'Me siento cómodo/a contactando clientes para gestionar cobros de cartera vencida.',opts:['Totalmente en desacuerdo','En desacuerdo','Neutral','De acuerdo','Totalmente de acuerdo']},
+      {id:'p10',type:'likert',text:'Mantengo confidencialidad de la información financiera de la empresa en todo momento.',opts:['Totalmente en desacuerdo','En desacuerdo','Neutral','De acuerdo','Totalmente de acuerdo']}
+    ]}
+  ],
+  'Recursos Humanos':[
+    {section:'A. Razonamiento y comprensión',qs:[
+      {id:'p1',type:'mc',text:'¿Cuál es el objetivo principal de un proceso de selección de personal?',opts:['Reducir costos laborales','Encontrar al candidato más idóneo para el cargo','Cumplir con requisitos legales únicamente','Capacitar al personal existente'],ans:1},
+      {id:'p2',type:'mc',text:'¿Qué es el Coeficiente Intelectual Emocional (IE) en el contexto laboral?',opts:['La capacidad de memorizar datos','La habilidad de gestionar emociones propias y ajenas en el trabajo','El nivel de estudios del empleado','La velocidad para resolver problemas matemáticos'],ans:1},
+      {id:'p3',type:'mc',text:'¿Cuánto es el salario mínimo legal vigente mensual en Colombia para 2024?',opts:['$1.100.000','$1.160.000','$1.300.000','$1.420.000'],ans:3},
+      {id:'p4',type:'mc',text:'¿Qué es la prueba de valores en un proceso de selección?',opts:['Evaluar el salario esperado','Identificar principios éticos y culturales del candidato','Verificar referencias laborales','Evaluar habilidades técnicas'],ans:1}
+    ]},
+    {section:'B. Conocimientos técnicos — RR.HH.',qs:[
+      {id:'p5',type:'mc',text:'¿Qué establece el Código Sustantivo del Trabajo sobre el período de prueba?',opts:['Máximo 3 meses para empleados nuevos','Máximo 2 meses, no más del 20% del contrato','Máximo 6 meses para cargos directivos','No existe período de prueba en Colombia'],ans:1},
+      {id:'p6',type:'mc',text:'¿Qué es el clima organizacional?',opts:['El ambiente físico de las instalaciones','La percepción colectiva de los empleados sobre su entorno laboral','La temperatura dentro de la empresa','El reglamento interno de trabajo'],ans:1},
+      {id:'p7',type:'mc',text:'¿Cuál es la función del SGSST en una empresa?',opts:['Gestionar el sistema de nómina','Garantizar la seguridad y salud de los trabajadores','Llevar la contabilidad de la empresa','Gestionar el proceso de ventas'],ans:1}
+    ]},
+    {section:'C. Perfil conductual',qs:[
+      {id:'p8',type:'likert',text:'Me resulta fácil mantener la confidencialidad de información sensible del personal.',opts:['Totalmente en desacuerdo','En desacuerdo','Neutral','De acuerdo','Totalmente de acuerdo']},
+      {id:'p9',type:'likert',text:'Puedo manejar situaciones de conflicto entre compañeros con objetividad e imparcialidad.',opts:['Totalmente en desacuerdo','En desacuerdo','Neutral','De acuerdo','Totalmente de acuerdo']},
+      {id:'p10',type:'likert',text:'Me interesa el desarrollo y bienestar del equipo humano tanto como el cumplimiento de metas.',opts:['Totalmente en desacuerdo','En desacuerdo','Neutral','De acuerdo','Totalmente de acuerdo']}
+    ]}
+  ],
+  'Sistemas e IT':[
+    {section:'A. Razonamiento lógico',qs:[
+      {id:'p1',type:'mc',text:'¿Cuál es el resultado de: 2 + 3 × 4 − 1?',opts:['19','13','15','20'],ans:1},
+      {id:'p2',type:'mc',text:'En programación, un bucle "while" se ejecuta:',opts:['Una sola vez','Mientras la condición sea verdadera','Siempre 10 veces','Hasta que el usuario lo detenga'],ans:1},
+      {id:'p3',type:'mc',text:'¿Qué significa "IP" en redes informáticas?',opts:['Internet Protocol','Internal Program','Input Process','Integrated Platform'],ans:0},
+      {id:'p4',type:'mc',text:'¿Cuál de estas es una base de datos relacional?',opts:['MongoDB','Redis','MySQL','Cassandra'],ans:2}
+    ]},
+    {section:'B. Conocimientos técnicos — IT',qs:[
+      {id:'p5',type:'mc',text:'¿Qué es un "backup" en el contexto de sistemas?',opts:['Una actualización de software','Una copia de seguridad de los datos','Un tipo de red inalámbrica','Un protocolo de comunicación'],ans:1},
+      {id:'p6',type:'mc',text:'¿Qué es SQL?',opts:['Un lenguaje de programación orientado a objetos','Un lenguaje para gestionar bases de datos relacionales','Un sistema operativo de servidores','Un protocolo de seguridad web'],ans:1},
+      {id:'p7',type:'mc',text:'En ciberseguridad, ¿qué es el phishing?',opts:['Un tipo de virus que daña archivos','Un intento de obtener información sensible suplantando identidades','Un método de encriptación de datos','Una técnica de backup automático'],ans:1}
+    ]},
+    {section:'C. Perfil conductual',qs:[
+      {id:'p8',type:'likert',text:'Me mantengo actualizado/a sobre nuevas tecnologías y tendencias del sector IT.',opts:['Totalmente en desacuerdo','En desacuerdo','Neutral','De acuerdo','Totalmente de acuerdo']},
+      {id:'p9',type:'likert',text:'Puedo explicar conceptos técnicos complejos a personas sin conocimientos de sistemas.',opts:['Totalmente en desacuerdo','En desacuerdo','Neutral','De acuerdo','Totalmente de acuerdo']},
+      {id:'p10',type:'likert',text:'Ante un problema técnico urgente, mantengo la calma y aplico una metodología sistemática.',opts:['Totalmente en desacuerdo','En desacuerdo','Neutral','De acuerdo','Totalmente de acuerdo']}
+    ]}
+  ]
+};
+
+const ptTestDefault = ptTests['Comercial / Ventas'];
+
+function getPtTest(){
+  const d = formData.depto||'';
+  if(d.includes('Comercial')||d.includes('Ventas')) return ptTests['Comercial / Ventas'];
+  if(d.includes('Bodega')||d.includes('Log')) return ptTests['Bodega y Logística'];
+  if(d.includes('Contab')||d.includes('Finan')||d.includes('Cartera')) return ptTests['Contabilidad y Finanzas'];
+  if(d.includes('Recursos')||d.includes('RR')) return ptTests['Recursos Humanos'];
+  if(d.includes('Sistemas')||d.includes('IT')||d.includes('Tecno')) return ptTests['Sistemas e IT'];
+  return ptTestDefault;
+}
+
+// ══ HELPERS ═══════════════════════════════════════════════════════
+function setMode(m){
+  mode=m; step=1; intRatings={}; intObs={}; formData={}; ptAnswers={};
+  document.querySelectorAll('.tab').forEach((t,i)=>{
+    t.classList.toggle('active',(i===0&&m==='empleo')||(i===1&&m==='sena'));
+  });
+  document.getElementById('modeBadge').textContent=m==='sena'?'Practicante SENA':'Candidato a Empleo';
+  render();
+}
+
+function updateProgress(){
+  const pct=Math.round((step/TOTAL_STEPS)*100);
+  document.getElementById('progFill').style.width=pct+'%';
+  document.getElementById('stepPct').textContent=pct+'%';
+  document.getElementById('stepLabel').textContent='Paso '+step+' — '+(stepLabels[step]||'');
+  const phases=[null,[1],[2,3,4],[5,6,7,8],[9]];
+  for(let i=1;i<=4;i++){
+    const el=document.getElementById('ph'+i); if(!el) continue;
+    const steps=phases[i];
+    if(steps.includes(step)) el.className='phase active';
+    else if(step>Math.max(...steps)) el.className='phase done';
+    else el.className='phase';
+  }
+}
+
+function render(){
+  updateProgress();
+  const c=document.getElementById('stepPanels');
+  if(step===1) c.innerHTML=renderStep1();
+  else if(step===2) c.innerHTML=renderIntBlock(0,'saveInt2',3);
+  else if(step===3) c.innerHTML=renderIntBlock(1,'saveInt3',4);
+  else if(step===4) c.innerHTML=renderIntBlock(2,'saveInt4',5);
+  else if(step===5) c.innerHTML=renderPtIntro();
+  else if(step===6) c.innerHTML=renderPtBlock(0,'savePt6',7);
+  else if(step===7) c.innerHTML=renderPtBlock(1,'savePt7',8);
+  else if(step===8) c.innerHTML=renderPtBlock(2,'savePt8',9);
+  else if(step===9) c.innerHTML=renderResult();
+  attachStarListeners();
+  window.scrollTo({top:0,behavior:'smooth'});
+}
+
+// ══ STEP 1 ════════════════════════════════════════════════════════
+function renderStep1(){
+  const isSena=mode==='sena';
+  return `<div class="card">
+    <div class="card-title">Datos del ${isSena?'Practicante SENA':'Candidato'}
+      <span class="badge ${isSena?'b-sena':'b-emp'}">${isSena?'Práctica SENA':'Empleo'}</span>
+    </div>
+    <div class="grid2">
+      <div class="field"><label>Nombres completos <span class="req">requerido</span></label><input type="text" id="nombres" placeholder="Ej: Laura Gómez Martínez" value="${formData.nombres||''}"></div>
+      <div class="field"><label>Cédula de ciudadanía</label><input type="text" id="cedula" placeholder="1.234.567.890" value="${formData.cedula||''}"></div>
+    </div>
+    <div class="grid3">
+      <div class="field"><label>Fecha de nacimiento</label><input type="date" id="fnac" value="${formData.fnac||''}"></div>
+      <div class="field"><label>Teléfono / Celular</label><input type="text" id="tel" placeholder="300 000 0000" value="${formData.tel||''}"></div>
+      <div class="field"><label>Correo electrónico</label><input type="email" id="email" placeholder="correo@ejemplo.com" value="${formData.email||''}"></div>
+    </div>
+    <div class="grid2">
+      <div class="field"><label>${isSena?'Área de práctica':'Cargo al que aplica'} <span class="req">requerido</span></label>
+        <input type="text" id="cargo" placeholder="${isSena?'Ej: Auxiliar contable':'Ej: Asesor comercial'}" value="${formData.cargo||''}">
+      </div>
+      <div class="field"><label>Nivel educativo</label>
+        <select id="edu">
+          <option value="">Seleccionar...</option>
+          ${isSena
+            ?'<option>Técnico SENA (en formación)</option><option>Tecnólogo SENA (en formación)</option>'
+            :'<option>Bachiller</option><option>Técnico</option><option>Tecnólogo</option><option>Profesional</option><option>Especialización</option>'}
+        </select>
+      </div>
+    </div>
+    <div class="grid2">
+      <div class="field"><label>Área / Departamento <span class="req">requerido</span></label>
+        <select id="depto">
+          <option value="">Seleccionar...</option>
+          <option>Comercial / Ventas</option>
+          <option>Bodega y Logística</option>
+          <option>Contabilidad y Finanzas</option>
+          <option>Recursos Humanos</option>
+          <option>Sistemas e IT</option>
+          <option>Gerencia</option>
+          <option>Otro</option>
+        </select>
+      </div>
+      <div class="field"><label>Fecha de entrevista</label>
+        <input type="date" id="fechaEnt" value="${formData.fechaEnt||new Date().toISOString().slice(0,10)}">
+      </div>
+    </div>
+    ${isSena?`<div class="grid2">
+      <div class="field"><label>Programa de formación SENA</label><input type="text" id="programa" placeholder="Ej: Técnico en Contabilización" value="${formData.programa||''}"></div>
+      <div class="field"><label>Centro SENA de procedencia</label><input type="text" id="centro" placeholder="Ej: Centro de Comercio y Servicios" value="${formData.centro||''}"></div>
+    </div>`:''}
+    <div class="legal-note">
+      <strong>Aviso de privacidad — Ley 1581 de 2012:</strong> Los datos recolectados serán tratados únicamente para el proceso de selección. Al continuar, el candidato autoriza su tratamiento conforme al Decreto 1377 de 2013. Esta evaluación no constituye oferta laboral ni vinculación.
+    </div>
+  </div>
+  <button class="btn-primary" onclick="saveStep1()">Iniciar entrevista →</button>`;
+}
+
+function saveStep1(){
+  ['nombres','cedula','fnac','tel','email','cargo','edu','depto','fechaEnt','programa','centro'].forEach(id=>{
+    const el=document.getElementById(id); if(el) formData[id]=el.value;
+  });
+  if(!formData.nombres){alert('Por favor ingrese el nombre completo del candidato.');return;}
+  if(!formData.cargo){alert('Por favor ingrese el cargo o área al que aplica.');return;}
+  if(!formData.depto){alert('Por favor seleccione el área para personalizar la prueba psicotécnica.');return;}
+  step=2; render();
+}
+
+// ══ INTERVIEW BLOCKS ══════════════════════════════════════════════
+function renderIntBlock(catIdx,saveFn,nextStep){
+  const cat=interviewSets[mode][catIdx];
+  let html=`<div class="card"><div class="card-title">${cat.cat} <span class="badge b-gray">Bloque ${catIdx+1} de 3</span></div>`;
+  cat.qs.forEach((q,i)=>{
+    const cur=intRatings[q.id]||0;
+    html+=`<div class="q-block">
+      <div class="q-text"><span class="q-num">${i+1}</span>${q.text}</div>
+      <div class="stars" data-qid="${q.id}">
+        ${[1,2,3,4,5].map(n=>`<div class="star${cur>=n?' on':''}" data-val="${n}" data-qid="${q.id}">${n}</div>`).join('')}
+      </div>
+      <div class="q-meta">
+        <span class="q-hint">1=Muy bajo · 2=Bajo · 3=Aceptable · 4=Bueno · 5=Excelente</span>
+        <span class="q-score" id="iscore_${q.id}">${cur>0?cur+' / 5':'Sin calificar'}</span>
+      </div>
+      <textarea class="obs-input" placeholder="Observaciones del entrevistador..." rows="2" data-qid="${q.id}">${intObs[q.id]||''}</textarea>
+    </div>`;
+  });
+  html+=`</div><div class="btn-grid">
+    <button class="btn-secondary" onclick="step=${nextStep-2};render()">← Volver</button>
+    <button class="btn-primary" onclick="${saveFn}()">${nextStep===5?'Finalizar entrevista →':'Continuar →'}</button>
+  </div>`;
+  return html;
+}
+function saveIntObs(i){interviewSets[mode][i].qs.forEach(q=>{const ta=document.querySelector(`textarea[data-qid="${q.id}"]`);if(ta)intObs[q.id]=ta.value;});}
+function saveInt2(){saveIntObs(0);step=3;render();}
+function saveInt3(){saveIntObs(1);step=4;render();}
+function saveInt4(){saveIntObs(2);step=5;render();}
+
+// ══ PT INTRO ══════════════════════════════════════════════════════
+function renderPtIntro(){
+  const test=getPtTest();
+  const depto=formData.depto||'el área seleccionada';
+  const totalMC=test.flatMap(b=>b.qs).filter(q=>q.type==='mc').length;
+  const totalLK=test.flatMap(b=>b.qs).filter(q=>q.type==='likert').length;
+  return `<div class="intro-box">
+    <h3>Prueba psicotécnica + técnica</h3>
+    <p>A continuación se aplicará la prueba diseñada para el área de <strong>${depto}</strong>. Combina preguntas de razonamiento lógico, conocimientos técnicos del área y perfil conductual.</p>
+    <p>El candidato debe responder de forma individual y sin ayuda externa.</p>
+    <div class="intro-grid">
+      <div class="intro-stat"><div class="intro-stat-num">${totalMC}</div><div class="intro-stat-label">Preguntas técnicas</div></div>
+      <div class="intro-stat"><div class="intro-stat-num">${totalLK}</div><div class="intro-stat-label">Perfil conductual</div></div>
+      <div class="intro-stat"><div class="intro-stat-num">${totalMC+totalLK}</div><div class="intro-stat-label">Total preguntas</div></div>
+    </div>
+  </div>
+  <div class="card">
+    <div class="card-title">Instrucciones</div>
+    <div style="font-size:13px;color:var(--sec);line-height:1.8">
+      • Lea cada pregunta con atención antes de responder.<br>
+      • Selección múltiple: solo una respuesta correcta.<br>
+      • Perfil conductual: seleccione la opción que mejor lo describe; no hay respuesta incorrecta.<br>
+      • Complete todos los bloques sin interrupciones.<br>
+      • Los resultados se combinarán con la entrevista para el concepto final.
+    </div>
+    <div class="legal-note" style="margin-top:12px">
+      <strong>Marco legal:</strong> Esta prueba se aplica en ejercicio del derecho del empleador a verificar la idoneidad del candidato (Art. 57 CST). Diseño pertinente y no discriminatorio conforme a directrices del Ministerio de Trabajo de Colombia.
+    </div>
+  </div>
+  <div class="btn-grid">
+    <button class="btn-secondary" onclick="step=4;render()">← Volver</button>
+    <button class="btn-primary" onclick="step=6;render()">Iniciar prueba →</button>
+  </div>`;
+}
+
+// ══ PT BLOCKS ═════════════════════════════════════════════════════
+function renderPtBlock(blockIdx,saveFn,nextStep){
+  const test=getPtTest();
+  const block=test[blockIdx];
+  let html=`<div class="card"><div class="card-title">${block.section} <span class="badge b-warn">Bloque ${blockIdx+1} de 3</span></div>`;
+  block.qs.forEach((q,i)=>{
+    const sel=ptAnswers[q.id];
+    html+=`<div class="pt-q"><div class="pt-q-text"><span class="pt-q-num">${i+1}</span>${q.text}</div>`;
+    if(q.type==='mc'){
+      html+=`<div class="pt-options">${q.opts.map((o,oi)=>`<div class="pt-opt${sel===oi?' selected':''}" onclick="selPt('${q.id}',${oi},this)"><span class="pt-opt-letter">${['A','B','C','D'][oi]}</span>${o}</div>`).join('')}</div>`;
+    } else {
+      html+=`<div class="likert-row">${q.opts.map((o,oi)=>`<div class="lk-opt${sel===oi?' selected':''}" onclick="selPt('${q.id}',${oi},this)">${o}</div>`).join('')}</div>`;
+    }
+    html+=`</div>`;
+  });
+  html+=`</div><div class="btn-grid">
+    <button class="btn-secondary" onclick="step=${nextStep-2};render()">← Volver</button>
+    <button class="btn-primary" onclick="${saveFn}()">${nextStep===9?'Ver resultado final →':'Continuar →'}</button>
+  </div>`;
+  return html;
+}
+function selPt(qid,val,el){
+  ptAnswers[qid]=val;
+  el.closest('.pt-q').querySelectorAll('.pt-opt,.lk-opt').forEach(o=>o.classList.remove('selected'));
+  el.classList.add('selected');
+}
+function savePt6(){step=7;render();}
+function savePt7(){step=8;render();}
+function savePt8(){step=9;render();}
+
+// ══ RESULT ════════════════════════════════════════════════════════
+function renderResult(){
+  const allIQs=interviewSets[mode].flatMap(c=>c.qs);
+  const intTotal=allIQs.reduce((s,q)=>s+(intRatings[q.id]||0),0);
+  const intMax=allIQs.length*5;
+  const intPct=intMax>0?Math.round((intTotal/intMax)*100):0;
+  const test=getPtTest();
+  const allPtQs=test.flatMap(b=>b.qs);
+  const mcQs=allPtQs.filter(q=>q.type==='mc');
+  const lkQs=allPtQs.filter(q=>q.type==='likert');
+  const mcCorrect=mcQs.filter(q=>ptAnswers[q.id]===q.ans).length;
+  const mcPct=mcQs.length>0?Math.round((mcCorrect/mcQs.length)*100):0;
+  const lkScore=lkQs.reduce((s,q)=>s+(ptAnswers[q.id]||0),0);
+  const lkPct=lkQs.length>0?Math.round((lkScore/(lkQs.length*4))*100):0;
+  const ptPct=Math.round((mcPct*0.7)+(lkPct*0.3));
+  const total=Math.round((intPct*0.55)+(ptPct*0.45));
+  let aptLabel,aptColor,aptBg;
+  if(total>=80){aptLabel='CANDIDATO APTO — Altamente recomendado';aptColor='#15803d';aptBg='#dcfce7';}
+  else if(total>=65){aptLabel='CANDIDATO APTO — Con seguimiento recomendado';aptColor='#1e3a5f';aptBg='#dbeafe';}
+  else if(total>=50){aptLabel='EN CONSIDERACIÓN — Evaluación adicional sugerida';aptColor='#c2410c';aptBg='#fff7ed';}
+  else{aptLabel='CANDIDATO NO APTO — No se recomienda continuar';aptColor='#b91c1c';aptBg='#fee2e2';}
+  const intCatScores=interviewSets[mode].map(cat=>{
+    const s=cat.qs.reduce((a,q)=>a+(intRatings[q.id]||0),0);
+    const m=cat.qs.length*5;
+    return{name:cat.cat,pct:m>0?Math.round((s/m)*100):0};
+  });
+  const isSena=mode==='sena';
+  return `
+  <div class="apt-banner" style="background:${aptBg};color:${aptColor};border:1.5px solid ${aptColor}">${aptLabel}</div>
+  <div class="result-summary">
+    <div class="res-card entrevista">
+      <div class="res-pct" style="color:var(--pri2)">${intPct}%</div>
+      <div class="res-label" style="color:var(--pri2)">Entrevista</div>
+      <div class="res-sub" style="color:var(--sec)">${intTotal}/${intMax} pts · Peso: 55%</div>
+    </div>
+    <div class="res-card prueba">
+      <div class="res-pct" style="color:var(--verde)">${ptPct}%</div>
+      <div class="res-label" style="color:var(--verde)">Prueba psicotécnica</div>
+      <div class="res-sub" style="color:var(--sec)">${mcCorrect}/${mcQs.length} correctas · Peso: 45%</div>
+    </div>
+    <div class="res-card total">
+      <div class="res-sub">Puntaje combinado final</div>
+      <div class="res-pct">${total}%</div>
+      <div class="res-label">${formData.nombres||'Candidato'} · ${formData.cargo||''}</div>
+    </div>
+  </div>
+  <div class="card">
+    <div class="card-title">Detalle por competencias — Entrevista</div>
+    <div class="result-bars">
+      ${intCatScores.map(cs=>`<div class="bar-row">
+        <span class="bar-name">${cs.name}</span>
+        <div class="bar-track"><div class="bar-fill" style="width:${cs.pct}%;background:${cs.pct>=60?'var(--pri2)':'var(--rojo)'}"></div></div>
+        <span class="bar-pct" style="color:${cs.pct>=60?'var(--pri2)':'var(--rojo)'}">${cs.pct}%</span>
+      </div>`).join('')}
+    </div>
+  </div>
+  <div class="card">
+    <div class="card-title">Detalle prueba psicotécnica — ${formData.depto||'Área'}</div>
+    <div class="result-bars">
+      <div class="bar-row"><span class="bar-name">Razonamiento técnico</span><div class="bar-track"><div class="bar-fill" style="width:${mcPct}%;background:${mcPct>=60?'var(--verde)':'var(--rojo)'}"></div></div><span class="bar-pct" style="color:${mcPct>=60?'var(--verde)':'var(--rojo)'}">${mcPct}%</span></div>
+      <div class="bar-row"><span class="bar-name">Perfil conductual</span><div class="bar-track"><div class="bar-fill" style="width:${lkPct}%;background:var(--pri3)"></div></div><span class="bar-pct" style="color:var(--pri3)">${lkPct}%</span></div>
+    </div>
+    <div style="margin-top:12px;font-size:12px;color:var(--sec);border-top:1px solid var(--borde);padding-top:10px">
+      Correctas: <strong>${mcCorrect} de ${mcQs.length}</strong>
+      ${mcQs.map(q=>{const ok=ptAnswers[q.id]===q.ans;return`<span style="display:inline-block;margin:2px 4px;padding:2px 8px;border-radius:12px;font-size:11px;background:${ok?'#dcfce7':'#fee2e2'};color:${ok?'#15803d':'#b91c1c'}">${ok?'✓':'✗'}</span>`;}).join('')}
+    </div>
+  </div>
+  <div class="card">
+    <div class="card-title">Verificación legal obligatoria</div>
+    <div class="check-row"><input type="checkbox" id="ch1"><label class="check-text" for="ch1">Se informó al candidato sobre el aviso de privacidad (Ley 1581/2012) y autorizó el tratamiento de sus datos.</label></div>
+    <div class="check-row"><input type="checkbox" id="ch2"><label class="check-text" for="ch2">No se realizaron preguntas discriminatorias por religión, política, orientación sexual, raza, estado civil o embarazo (Art. 26 C.N. / Ley 931/2004).</label></div>
+    ${isSena?`
+    <div class="check-row"><input type="checkbox" id="ch3"><label class="check-text" for="ch3">El practicante contará con afiliación a ARL durante la práctica (Decreto 055/2015).</label></div>
+    <div class="check-row"><input type="checkbox" id="ch4"><label class="check-text" for="ch4">El contrato de aprendizaje cumple con la Ley 789/2002, artículos 30 a 32.</label></div>`:`
+    <div class="check-row"><input type="checkbox" id="ch3"><label class="check-text" for="ch3">El proceso respeta el principio de igualdad y no incurre en discriminación laboral (Ley 1010/2006).</label></div>
+    <div class="check-row"><input type="checkbox" id="ch4"><label class="check-text" for="ch4">No se indagó sobre antecedentes penales no relacionados con el cargo (Ley 1709/2014).</label></div>`}
+    <div class="check-row"><input type="checkbox" id="ch5"><label class="check-text" for="ch5">La prueba aplicada es pertinente al cargo y no tiene carácter discriminatorio (Ministerio de Trabajo).</label></div>
+    <div class="check-row"><input type="checkbox" id="ch6"><label class="check-text" for="ch6">La información será archivada de forma confidencial y solo accesible a RR.HH.</label></div>
+  </div>
+  <div class="card">
+    <div class="card-title">Concepto del entrevistador</div>
+    <div class="grid2" style="margin-bottom:12px">
+      <div class="field"><label>Nombre del entrevistador</label><input type="text" id="entrev" placeholder="Nombre completo"></div>
+      <div class="field"><label>Cargo del entrevistador</label><input type="text" id="cargoEnt" placeholder="Ej: Coordinador de RR.HH."></div>
+    </div>
+    <div class="field"><label>Observaciones finales y recomendación</label>
+      <textarea id="concepto" rows="4" placeholder="Resuma el desempeño, fortalezas, aspectos a considerar y recomendación final..."></textarea>
+    </div>
+  </div>
+  <button class="btn-success" onclick="imprimirResumen(${total},${intPct},${ptPct},${mcPct},${lkPct},${mcCorrect},${mcQs.length})">Imprimir / Guardar como PDF</button>
+  <div style="margin-top:10px"><button class="btn-secondary" onclick="step=1;intRatings={};intObs={};formData={};ptAnswers={};render()">Nueva evaluación</button></div>
+  <p class="disclaimer">Este resultado es una herramienta de apoyo para RR.HH. La decisión final de vinculación corresponde exclusivamente a la empresa conforme al Código Sustantivo del Trabajo y normas laborales colombianas vigentes.</p>`;
+}
+
+// ══ PRINT ═════════════════════════════════════════════════════════
+function imprimirResumen(total,intPct,ptPct,mcPct,lkPct,mcCorrect,mcTotal){
+  const nombre=formData.nombres||'N/A', cedula=formData.cedula||'N/A';
+  const cargo=formData.cargo||'N/A', depto=formData.depto||'N/A';
+  const fecha=formData.fechaEnt||'N/A';
+  const entrev=document.getElementById('entrev')?.value||'N/A';
+  const cargoEnt=document.getElementById('cargoEnt')?.value||'N/A';
+  const concepto=document.getElementById('concepto')?.value||'Sin observaciones';
+  const tipo=mode==='sena'?'Practicante SENA':'Candidato a Empleo';
+  const apt=total>=65?'APTO':'NO APTO';
+  const logoSrc=cfg.logoSrc;
+  const empresa=cfg.nombre;
+  const aptColor=total>=80?'#15803d':total>=65?'#1e3a5f':total>=50?'#c2410c':'#b91c1c';
+  const aptBg=total>=80?'#dcfce7':total>=65?'#dbeafe':total>=50?'#fff7ed':'#fee2e2';
+  const intCatScores=interviewSets[mode].map(cat=>{
+    const s=cat.qs.reduce((a,q)=>a+(intRatings[q.id]||0),0);
+    const m=cat.qs.length*5;
+    return{name:cat.cat,pct:m>0?Math.round((s/m)*100):0,s,m};
+  });
+  const test=getPtTest();
+  const mcQs2=test.flatMap(b=>b.qs).filter(q=>q.type==='mc');
+  const detallePt=mcQs2.map(q=>{
+    const ok=ptAnswers[q.id]===q.ans;
+    return`<tr><td style="padding:6px 8px;font-size:12px;border-bottom:1px solid #eee">${q.text}</td><td style="padding:6px 8px;font-size:12px;border-bottom:1px solid #eee;color:#666">${ptAnswers[q.id]!==undefined?q.opts[ptAnswers[q.id]]:'Sin responder'}</td><td style="padding:6px 8px;font-size:12px;text-align:center;border-bottom:1px solid #eee;font-weight:700;color:${ok?'#15803d':'#b91c1c'}">${ok?'✓ Correcto':'✗ Incorrecto'}</td></tr>`;
+  }).join('');
+  const detalleInt=interviewSets[mode].flatMap(cat=>cat.qs.map(q=>`<tr><td style="padding:6px 8px;font-size:12px;border-bottom:1px solid #eee">${q.text}</td><td style="padding:6px 8px;text-align:center;font-weight:700;font-size:13px;border-bottom:1px solid #eee;color:${(intRatings[q.id]||0)>=4?'#15803d':(intRatings[q.id]||0)>=3?'#1e3a5f':'#b91c1c'}">${intRatings[q.id]||'—'}/5</td><td style="padding:6px 8px;font-size:11px;color:#666;border-bottom:1px solid #eee">${intObs[q.id]||'—'}</td></tr>`)).join('');
+  const logoHtml=logoSrc?`<img src="${logoSrc}" style="width:68px;height:68px;border-radius:50%;object-fit:cover">`:`<div style="width:68px;height:68px;border-radius:50%;background:#dbeafe;display:flex;align-items:center;justify-content:center;font-size:20px;font-weight:800;color:#1e3a5f">${empresa.split(' ').slice(0,2).map(w=>w[0]).join('').toUpperCase()}</div>`;
+  const win=window.open('','_blank');
+  win.document.write(`<!DOCTYPE html><html lang="es"><head><meta charset="UTF-8"><title>Evaluación — ${nombre}</title>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
+  <style>body{font-family:'Plus Jakarta Sans',Arial,sans-serif;margin:0;padding:32px;color:#1a2740;font-size:13px}
+  .hdr{display:flex;align-items:center;gap:18px;margin-bottom:24px;padding-bottom:16px;border-bottom:3px solid #1e3a5f}
+  h2{font-size:18px;color:#1e3a5f;margin:0;font-weight:800}.sub{color:#526070;font-size:12px;margin:3px 0 0}
+  .apt{text-align:center;background:${aptBg};color:${aptColor};border:2px solid ${aptColor};border-radius:10px;padding:14px;margin:16px 0;font-size:15px;font-weight:800}
+  .scores{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin:16px 0}
+  .sc{text-align:center;border:1px solid #d1dce8;border-radius:10px;padding:14px}
+  .sc-num{font-size:30px;font-weight:800;color:#1e3a5f}.sc-lbl{font-size:11px;color:#526070;margin-top:3px}
+  .st{font-size:13px;font-weight:700;color:#1e3a5f;margin:18px 0 7px;padding-bottom:5px;border-bottom:1px solid #d1dce8}
+  .g2{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px}
+  .fp label{font-size:10px;color:#8fa0b0;font-weight:700;display:block;margin-bottom:2px}.fp span{font-size:13px;font-weight:600}
+  table{width:100%;border-collapse:collapse}th{background:#1e3a5f;color:#fff;padding:7px 8px;font-size:11px;text-align:left}
+  .caja{background:#f0f4f9;border-left:3px solid #4a7fb5;padding:10px 14px;border-radius:0 8px 8px 0;font-size:12px;line-height:1.6}
+  .footer-p{margin-top:24px;padding-top:12px;border-top:1px solid #d1dce8;font-size:10px;color:#8fa0b0;text-align:center;line-height:1.8}
+  @media print{body{padding:16px}}</style></head><body>
+  <div class="hdr">${logoHtml}<div><h2>${empresa}</h2><p class="sub">Informe de Evaluación — ${tipo}</p><p class="sub">Gestión de Talento Humano · ${fecha}</p></div></div>
+  <div class="st">Datos del candidato</div>
+  <div class="g2">
+    <div class="fp"><label>NOMBRE</label><span>${nombre}</span></div>
+    <div class="fp"><label>CÉDULA</label><span>${cedula}</span></div>
+    <div class="fp"><label>CARGO / ÁREA</label><span>${cargo}</span></div>
+    <div class="fp"><label>DEPARTAMENTO</label><span>${depto}</span></div>
+    <div class="fp"><label>TIPO</label><span>${tipo}</span></div>
+    <div class="fp"><label>FECHA</label><span>${fecha}</span></div>
+  </div>
+  <div class="apt">${apt} — Puntaje combinado: ${total}%</div>
+  <div class="scores">
+    <div class="sc"><div class="sc-num">${intPct}%</div><div class="sc-lbl">Entrevista (55%)</div></div>
+    <div class="sc"><div class="sc-num">${ptPct}%</div><div class="sc-lbl">Prueba psicotécnica (45%)</div></div>
+    <div class="sc"><div class="sc-num">${mcCorrect}/${mcTotal}</div><div class="sc-lbl">Preguntas técnicas correctas</div></div>
+  </div>
+  <div class="st">Detalle entrevista</div>
+  <table><tr><th style="width:45%">Pregunta</th><th style="width:8%;text-align:center">Nota</th><th>Observaciones</th></tr>${detalleInt}</table>
+  <div class="st">Puntaje por bloque entrevista</div>
+  <table><tr>${intCatScores.map(c=>`<th>${c.name}: ${c.pct}% (${c.s}/${c.m})</th>`).join('')}</tr></table>
+  <div class="st">Prueba psicotécnica — ${depto}</div>
+  <table><tr><th style="width:55%">Pregunta</th><th>Respuesta</th><th style="width:15%;text-align:center">Resultado</th></tr>${detallePt}</table>
+  <div class="st">Concepto del entrevistador</div>
+  <div class="g2" style="margin-bottom:8px">
+    <div class="fp"><label>ENTREVISTADOR</label><span>${entrev}</span></div>
+    <div class="fp"><label>CARGO</label><span>${cargoEnt}</span></div>
+  </div>
+  <div class="caja">${concepto}</div>
+  <div class="footer-p">Documento confidencial — Uso exclusivo del área de Recursos Humanos<br>
+  La decisión de vinculación corresponde a la empresa conforme al C.S.T. y normas laborales colombianas.<br>
+  Desarrollada por Vibras Positivas HM — Derechos de Autor Reservados.</div>
+  <script>window.onload=()=>window.print()<\/script></body></html>`);
+  win.document.close();
+}
+
+// ══ STAR LISTENERS ════════════════════════════════════════════════
+function attachStarListeners(){
+  document.querySelectorAll('.star').forEach(s=>{
+    s.onclick=()=>{
+      const qid=s.getAttribute('data-qid'), val=parseInt(s.getAttribute('data-val'));
+      intRatings[qid]=val;
+      document.querySelectorAll(`.star[data-qid="${qid}"]`).forEach(st=>st.classList.toggle('on',parseInt(st.getAttribute('data-val'))<=val));
+      const sc=document.getElementById('iscore_'+qid); if(sc) sc.textContent=val+' / 5';
+    };
+  });
+}
+
+// ══ INIT ══════════════════════════════════════════════════════════
+// Check if already configured
+if(cfg.nombre !== 'SelectaPro' || cfg.logoSrc) {
+  applyConfig();
+  document.getElementById('adminOverlay').classList.add('hidden');
+  render();
+} else {
+  render();
+}
+</script>
+</body>
+</html>
